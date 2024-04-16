@@ -1,0 +1,279 @@
+#include "DS.h"
+
+/*
+  `ptree`-ийн зааж байгаа модонд `x` утгыг оруулна.
+  Оруулахдаа хоёртын хайлтын модны зарчмаар оруулах бөгөөд оруулсан
+  байрлалаас дээшхи өвөг эцгийн `len`, `height` утгууд өөрчлөгдөнө.
+  Мод хоосон байсан бол `ptree->root` хаяг өөрчлөгдөж шинээр орсон оройг заана.
+  Хэрэв мод тэнцвэрээ алдсан бол тохирох тэнцвэржүүлэх үйлдлүүдийг хийнэ.
+ */
+ Elm *createnode(int x){
+    Elm *node = malloc(sizeof(Elm));
+    if(node == NULL){
+        exit(EXIT_FAILURE);
+    }
+    node->x=x;
+    node->height = 1;
+    node->len = 1;
+    node->R = NULL;
+    node->L = NULL;
+    return node;
+
+ }
+ int *height(Elm *node){
+    if(node==NULL){
+        return 0;
+    }
+    return node->height;
+ }
+ int max(int a, int b){
+    return (a>b) ? a:b;
+ }
+ int balance_factor(Elm *node){
+    if(node == NULL){
+      return 0;
+    }
+    return height(node->L)-height(node->R);
+ }
+ Elm *rotate_right(Elm *y){
+    Elm *x = y->L;
+    Elm *T2 = x->R;
+
+    x->R = y;
+    y->L = T2;
+
+    y->height = max(height(y->L),height(y->R))+1;
+    x->height = max(height(x->L),height(x->R))+1;
+
+    y->len = avl_size_helper(y->L) + avl_size_helper(y->R) + 1;
+    x->len = avl_size_helper(x->L) + avl_size_helper(x->R) + 1;
+
+    return x;
+ }
+ Elm *rotate_light(Elm *x){
+    Elm *y = x->R;
+    Elm *T2 = y->L;
+
+    x->R = T2;
+    y->L = x;
+
+    y->height = max(height(y->L),height(y->R))+1;
+    x->height = max(height(x->L),height(x->R))+1;
+
+    y->len = avl_size_helper(y->L) + avl_size_helper(y->R) + 1;
+    x->len = avl_size_helper(x->L) + avl_size_helper(x->R) + 1;
+
+    return y;
+ }
+Elm *avl_put_node(Elm *root,int x){
+    if(root == NULL){
+        return createnode(x);
+    }
+    if(node->x > x){
+        node->L = avl_put_node(node->L,int x);
+    }else if(node->x < x){
+        node->R = avl_put_node(node->R, int x);
+    }else{
+        return node;
+    }
+    node->height = 1 + max(height(node->L), height(node->R));
+    node->len = avl_size_helper(node->L) + avl_size_helper(node->R) + 1;
+
+    int balance = balance_factor(node);
+
+    if( balance > 1 && x < node->L->x){
+        return rotate_right(node);
+    }
+    if( balance < -1 && x > node->R->x){
+        return rotate_left(node);
+    }
+    if (balance > 1 && x > node->L->x) {
+        node->L = rotate_left(node->L);
+        return rotate_right(node);
+    }
+    if (balance < -1 && x < node->R->x) {
+        node->R = rotate_right(node->R);
+        return rotate_left(node);
+    }
+    return node;
+}
+void avl_put(AVL *ptree, int x)
+{
+    ptree->root = avl_put_node(ptree->root, x);
+}
+
+/*
+  `ptree`-ийн зааж байгаа модноос `x` утгыг хайн олдсон оройн `Elm*` хаягийг буцаана.
+  Олдохгүй бол `NULL` хаягийг буцаана.
+  Мод дандаа ялгаатай элементүүд хадгална гэж үзэж болно.
+ */
+ Elm *avl_get_node(Elm *node,int x){
+    if(node == NULL || node->x == x){
+        return node;
+    }
+    if(node->x > x){
+        return avl_get_node(node->L,x);
+    }else{
+        return avl_get_node(node->R,x);
+    }
+ }
+Elm *avl_get(const AVL *ptree, int x)
+{
+      return avl_get_node(ptree->root,x);
+}
+
+Elm *min_value(Elm *node) {
+    Elm *current = node;
+    while (current->L != NULL)
+        current = current->L;
+
+    return current;
+}
+/*
+  Устгах функц: ТМноос `x` утгыг хайж олоод устгана.
+  Олдохгүй бол юу ч хийхгүй.
+  Хэрэв мод тэнцвэрээ алдсан бол тохирох тэнцвэржүүлэх үйлдлүүдийг хийнэ.
+ */
+Elm *avl_del_node(Elm *node,int x){
+    if(node == NULL){
+        return node;
+    }
+    if(node->x > x){
+        node->R = avl_del_node(node->R,x);
+    }else if(node->x < x){
+        node->L = avl_del_node(node->L,x);
+    }else{
+        if(node->L==NULL || node->R == NULL){
+            Elm *temp = node->L ? node->L : node->R;
+            
+            if(temp == NULL){
+                temp = node;
+                node =NULL;
+            }else{
+                *node = *temp;
+                free(temp);
+            }
+        }else{
+            Elm *temp = min_value(node->R);
+
+            node->x = temp->x;
+            node->R = avl_del_helper(node->R, temp->x);
+        }
+    }
+    if(node == NULL){
+        return node;
+    }
+    node->height = 1 + max(height(node->L), height(node->R));
+    node->len = avl_size_helper(node->L) + avl_size_helper(node->R) + 1;
+
+    int balance =  balance_factor(node);
+    if (balance > 1 && balance_factor(node->L) >= 0)
+        return rotate_right(node);
+
+    if (balance > 1 && balance_factor(node->L) < 0) {
+        node->L = rotate_left(node->L);
+        return rotate_right(node);
+    }
+
+    if (balance < -1 && balance_factor(node->R) <= 0)
+        return rotate_left(node);
+
+    if (balance < -1 && balance_factor(node->R) > 0) {
+        node->R = rotate_right(node->R);
+        return rotate_left(node);
+    }
+
+    return node;
+}
+void avl_del(AVL *ptree, int x)
+{
+      ptree->root =  avl_del_node(ptree->root,x);
+}
+
+/*
+  Хамгийн багыг устгах функц: ТМноос хамгийг бага утгыг нь устгах функц.
+  Устгасан утгыг буцаана.
+  Хэрэв мод тэнцвэрээ алдсан бол тохирох тэнцвэржүүлэх үйлдлүүдийг хийнэ.
+ */
+Elm *avl_delmin_node(Elm *node){
+    if(node == NULL){
+        return NULL;
+    }
+    if(node->L==NULL){
+      Elm *temp = node->R;
+        free(node);
+        return temp;
+    }
+    node->L = avl_delMin_helper(node->L);
+    node->height = 1 + max(height(node->L), height(node->R));
+    node->len = avl_size_helper(node->L) + avl_size_helper(node->R) + 1;
+
+    int balance = balance_factor(node);
+    if (balance > 1 && balance_factor(node->L) >= 0)
+        return rotate_right(node);
+    if (balance > 1 && balance_factor(node->L) < 0) {
+        node->L = rotate_left(node->L);
+        return rotate_right(node);
+    }
+
+    return node;
+}
+int avl_delMin(AVL *ptree)
+{
+      if(ptree->root == NULL){
+        return -1;
+      }
+      ptree->root = avl_delmin_node(ptree->root);
+      return 0;
+}
+
+/*
+  ТМыг inorder дарааллаар, нэг мөрөнд нэг утга хэвлэнэ.
+ */
+ void avl_inorder_helper(Elm *node) {
+    if (node != NULL) {
+        avl_inorder_helper(node->L);
+        printf("%d ", node->x);
+        avl_inorder_helper(node->R);
+    }
+}
+void avl_inorder(const AVL *ptree)
+{
+    avl_inorder_helper(ptree->root);
+}
+
+/*
+  ТМноос `x` утгатай оройг хайж олоод, тухайн оройд суурилсан
+  дэд модонд хэдэн орой байгааг олж буцаана.
+  Олдохгүй бол -1-ийг буцаана.
+ */
+int avl_size_helper(Elm *node, int x) {
+    // Base case: If the node is NULL, return 0
+    if (node == NULL)
+        return 0;
+
+    // If the value is found at the current node, return the size of its subtree
+    if (node->x == x)
+        return avl_size_helper(node->L) + avl_size_helper(node->R) + 1;
+
+    // If the value is less than the current node's value, search in the left subtree
+    else if (x < node->x)
+        return avl_size_helper(node->L, x);
+
+    // If the value is greater than the current node's value, search in the right subtree
+    else
+        return avl_size_helper(node->R, x);
+}
+int avl_size(const AVL *ptree, int x)
+{
+    return avl_size_helper(ptree->root, x);
+}
+
+/*
+  ТМноос `x` утгатай оройг хайж олоод, тухайн оройд суурилсан
+  дэд модны өндөр хэд байгааг олж буцаана. Олдохгүй бол -1-ийг буцаана.
+ */
+int avl_height(const AVL *ptree, int x)
+{
+        return (ptree->root == NULL) ? 0 : ptree->root->height;
+}
